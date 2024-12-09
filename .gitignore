@@ -35,7 +35,7 @@ dist/
 
 
 # Ignore static assets like uploaded/generated images
-dataImage/
+# dataImage/
 
 # Ignore compiled files or artifacts
 htmlcov/
