@@ -287,7 +287,9 @@ def stop_tracking():
     tracking_active = False
     return jsonify({"status": "Tracking stopped"})
 
-if __name__ == "__main__":
-    print("Starting initial training...")
-    train_model()
-    app.run(debug=True, use_reloader=False)
+
+print("Starting initial training...")
+train_model()
+port = int(os.environ.get('PORT', 5000))  # Render sets the PORT environment variable
+app.run(host='0.0.0.0', port=port)
+
