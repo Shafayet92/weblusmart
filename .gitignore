@@ -33,8 +33,6 @@ dist/
 # Ignore temporary folders
 .cache/
 
-# Ignore model training results (if you save or cache large model files here)
-models/
 
 # Ignore static assets like uploaded/generated images
 dataImage/
