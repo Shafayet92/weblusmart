@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LU Smart - Course Attendance Review</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+          to right,
+          #e31837 0%,
+          #e31837 50%,
+          #ffffff 50%,
+          #ffffff 100%
+        );
+        padding: 20px;
+        padding-top: 80px;
+      }
+
+      /* Navigation Styles */
+      .nav-container {
+        background: #efebeb;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 15px 30px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+      }
+
+      .nav-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .nav-logo img {
+        height: 40px;
+        width: auto;
+      }
+
+      .nav-logo span {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #e31837;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 30px;
+        align-items: center;
+      }
+
+      .nav-link {
+        color: #333;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .nav-link:hover {
+        color: #e31837;
+      }
+
+      .logout-button {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 15px;
+        background: #e31837;
+        border: none;
+        border-radius: 20px;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .logout-button:hover {
+        background: #c41230;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(227, 24, 55, 0.3);
+      }
+
+      /* Main Container */
+      .dashboard-container {
+        width: 100%;
+        max-width: 1000px;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 24px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+      }
+
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .section-title {
+        font-size: 1.8rem;
+        color: #e31837;
+        font-weight: 600;
+      }
+
+      /* Table Styles */
+      .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 24px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .attendance-table th,
+      .attendance-table td {
+        padding: 16px 24px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .attendance-table th {
+        background: #ed8b40;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .attendance-table tbody tr:hover {
+        background-color: #f1f3f5;
+      }
+
+      .radio-input {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ddd;
+        border-radius: 50%;
+        margin: 0;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .radio-input:checked {
+        border-color: #e31837;
+        background: #e31837;
+        box-shadow: inset 0 0 0 4px #fff;
+      }
+
+      .update-attendance-button {
+        padding: 12px 24px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .update-attendance-button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Include the navigation bar -->
+    <div id="navbar-placeholder"></div>
+
+    <div class="dashboard-container">
+      <div class="header-container">
+        <h1 class="section-title">UX with AI (INEN-6301-02)</h1>
+      </div>
+
+      <table class="attendance-table">
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Name</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <input
+                type="radio"
+                name="student"
+                class="radio-input"
+                value="Student 1"
+              />
+            </td>
+            <td>Student 1</td>
+            <td>Present</td>
+          </tr>
+          <tr>
+            <td>
+              <input
+                type="radio"
+                name="student"
+                class="radio-input"
+                value="Student 2"
+              />
+            </td>
+            <td>Student 2</td>
+            <td>Absent</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <button class="update-attendance-button" id="updateButton" disabled>
+        Update Attendance
+      </button>
+    </div>
+
+    <script>
+      // Load the nav.html content into the #navbar-placeholder
+      fetch("/nav")
+        .then((response) => response.text())
+        .then((data) => {
+          document.getElementById("navbar-placeholder").innerHTML = data;
+        });
+
+      const radioButtons = document.querySelectorAll(".radio-input");
+      const updateButton = document.getElementById("updateButton");
+
+      radioButtons.forEach((radio) => {
+        radio.addEventListener("change", () => {
+          updateButton.disabled = false;
+        });
+      });
+
+      updateButton.addEventListener("click", () => {
+        const selectedStudent = document.querySelector(
+          ".radio-input:checked"
+        ).value;
+        alert(`Updating attendance for ${selectedStudent}`);
+        window.location.href = "{{ url_for('update_attendance_final') }}";
+      });
+    </script>
+  </body>
+</html>

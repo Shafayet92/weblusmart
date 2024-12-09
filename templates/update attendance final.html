@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LU Smart - Student Record</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+          to right,
+          #e31837 0%,
+          #e31837 50%,
+          #ffffff 50%,
+          #ffffff 100%
+        );
+        padding: 20px;
+        padding-top: 80px;
+      }
+
+      /* Navigation Styles */
+      .nav-container {
+        background: #efebeb;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 15px 30px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+      }
+
+      .nav-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .nav-logo img {
+        height: 40px;
+        width: auto;
+      }
+
+      .nav-logo span {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #e31837;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 30px;
+        align-items: center;
+      }
+
+      .nav-link {
+        color: #333;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .nav-link:hover {
+        color: #e31837;
+      }
+
+      .nav-profile {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 8px 15px;
+      }
+
+      .logout-button {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 15px;
+        background: #e31837;
+        border: none;
+        border-radius: 20px;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .logout-button:hover {
+        background: #c41230;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(227, 24, 55, 0.3);
+      }
+
+      .logout-button i {
+        font-size: 1.1rem;
+      }
+
+      /* Dashboard Styles */
+      .dashboard-container {
+        width: 100%;
+        max-width: 800px;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 24px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        position: relative;
+      }
+
+      .student-name {
+        font-size: 1.8rem;
+        color: #e31837;
+        margin-bottom: 24px;
+        padding: 12px 24px;
+        background: #f8f9fa;
+        border-radius: 50px;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .percentage {
+        position: absolute;
+        top: 40px;
+        right: 40px;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #28a745;
+        transition: color 0.3s ease;
+      }
+
+      .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 24px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .attendance-table th,
+      .attendance-table td {
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid #eaeaea;
+      }
+
+      .attendance-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .attendance-table tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .attendance-select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #eaeaea;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #333;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .attendance-select:focus {
+        outline: none;
+        border-color: #e31837;
+      }
+
+      .attendance-select.present {
+        border-color: #28a745;
+        background-color: #f8fff9;
+      }
+
+      .attendance-select.absent {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+      }
+
+      .attendance-select.excuse {
+        border-color: #ffc107;
+        background-color: #fffbeb;
+      }
+
+      .button-container {
+        display: flex;
+        gap: 16px;
+        margin-top: 32px;
+      }
+
+      .action-button {
+        flex: 1;
+        padding: 16px;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .review-button {
+        background: #f8f9fa;
+        color: #333;
+      }
+
+      .save-button {
+        background: #e31837;
+        color: white;
+      }
+
+      .action-button:hover {
+        transform: translateY(-2px);
+      }
+
+      .review-button:hover {
+        background: #e9ecef;
+      }
+
+      .save-button:hover {
+        background: #c41230;
+        box-shadow: 0 4px 12px rgba(227, 24, 55, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Include the navigation bar -->
+    <div id="navbar-placeholder"></div>
+
+    <div class="dashboard-container">
+      <h1 class="student-name">Student 1</h1>
+      <div class="percentage" id="attendancePercentage">57%</div>
+
+      <table class="attendance-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Date</th>
+            <th>Attendance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Class 1</td>
+            <td class="date-cell">20 Nov 2024</td>
+            <td>
+              <select
+                class="attendance-select"
+                onchange="updateAttendance(this)"
+              >
+                <option value="present" selected>Present</option>
+                <option value="absent">Absent</option>
+                <option value="excuse">Excuse</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Class 2</td>
+            <td class="date-cell">21 Nov 2024</td>
+            <td>
+              <select
+                class="attendance-select"
+                onchange="updateAttendance(this)"
+              >
+                <option value="present" selected>Present</option>
+                <option value="absent">Absent</option>
+                <option value="excuse">Excuse</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Class 3</td>
+            <td class="date-cell">22 Nov 2024</td>
+            <td>
+              <select
+                class="attendance-select"
+                onchange="updateAttendance(this)"
+              >
+                <option value="present" selected>Present</option>
+                <option value="absent">Absent</option>
+                <option value="excuse">Excuse</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Class 4</td>
+            <td class="date-cell">23 Nov 2024</td>
+            <td>
+              <select
+                class="attendance-select"
+                onchange="updateAttendance(this)"
+              >
+                <option value="present">Present</option>
+                <option value="absent" selected>Absent</option>
+                <option value="excuse">Excuse</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Class 5</td>
+            <td class="date-cell">23 Nov 2024</td>
+            <td>
+              <select
+                class="attendance-select"
+                onchange="updateAttendance(this)"
+              >
+                <option value="present">Present</option>
+                <option value="absent" selected>Absent</option>
+                <option value="excuse">Excuse</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="button-container">
+        <button
+          class="action-button review-button"
+          onclick="reviewAttendance()"
+        >
+          Review
+        </button>
+        <button class="action-button save-button" onclick="saveChanges()">
+          Save Changes
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Load the nav.html content into the #navbar-placeholder
+      fetch("/nav")
+        .then((response) => response.text())
+        .then((data) => {
+          document.getElementById("navbar-placeholder").innerHTML = data;
+        });
+      function updateAttendance(select) {
+        select.classList.remove("present", "absent", "excuse");
+        select.classList.add(select.value);
+
+        const selects = document.querySelectorAll(".attendance-select");
+        const total = selects.length;
+        const present = Array.from(selects).filter(
+          (s) => s.value === "present"
+        ).length;
+        const percentage = Math.round((present / total) * 100);
+
+        const percentageElement = document.getElementById(
+          "attendancePercentage"
+        );
+        percentageElement.textContent = `${percentage}%`;
+
+        if (percentage >= 75) {
+          percentageElement.style.color = "#28a745";
+        } else if (percentage >= 50) {
+          percentageElement.style.color = "#ffc107";
+        } else {
+          percentageElement.style.color = "#dc3545";
+        }
+      }
+
+      function reviewAttendance() {
+        const selects = document.querySelectorAll(".attendance-select");
+        const total = selects.length;
+        const present = Array.from(selects).filter(
+          (s) => s.value === "present"
+        ).length;
+        const absent = Array.from(selects).filter(
+          (s) => s.value === "absent"
+        ).length;
+        const excused = Array.from(selects).filter(
+          (s) => s.value === "excuse"
+        ).length;
+
+        alert(
+          `Attendance Summary:\n\n` +
+            `Total Classes: ${total}\n` +
+            `Present: ${present}\n` +
+            `Absent: ${absent}\n` +
+            `Excused: ${excused}\n\n` +
+            `Attendance Percentage: ${Math.round((present / total) * 100)}%`
+        );
+      }
+
+      function saveChanges() {
+        const attendance = Array.from(
+          document.querySelectorAll(".attendance-select")
+        ).map((select) => ({
+          class: select.closest("tr").querySelector("td").textContent,
+          status: select.value,
+        }));
+
+        console.log("Saving attendance:", attendance);
+        alert("Changes saved successfully!");
+        window.location.href = "{{ url_for('dashboard') }}";
+      }
+
+      document.querySelectorAll(".attendance-select").forEach((select) => {
+        select.classList.add(select.value);
+      });
+
+      updateAttendance(document.querySelector(".attendance-select"));
+    </script>
+  </body>
+</html>

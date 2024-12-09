@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LU Smart - Webcam Feed</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+          to right,
+          #e31837 0%,
+          #e31837 50%,
+          #ffffff 50%,
+          #ffffff 100%
+        );
+        padding: 20px;
+        padding-top: 80px;
+      }
+
+      .dashboard-container {
+        width: 100%;
+        max-width: 800px;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 24px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+      }
+
+      .section-title {
+        font-size: 1.8rem;
+        color: #e31837;
+        margin-bottom: 24px;
+        padding: 12px 24px;
+        background: #f8f9fa;
+        border-radius: 50px;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .webcam-container {
+        position: relative;
+        aspect-ratio: 16/9;
+        background: #000;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        overflow: hidden;
+      }
+
+      .webcam-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 20px;
+        color: white;
+      }
+
+      .webcam-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .rec-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .rec-dot {
+        width: 8px;
+        height: 8px;
+        background: #e31837;
+        border-radius: 50%;
+        animation: blink 1s infinite;
+      }
+
+      .battery-indicator {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 2rem;
+      }
+
+      .quality-indicator {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+      }
+
+      .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 24px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .attendance-table th,
+      .attendance-table td {
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid #eaeaea;
+      }
+
+      .attendance-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .attendance-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .status-present {
+        color: #28a745;
+        font-weight: 500;
+      }
+
+      .status-luid {
+        color: #dc3545;
+        font-weight: 500;
+      }
+
+      .stop-button {
+        margin-bottom: 24px;
+        width: 100%;
+        padding: 16px;
+        background: #e31837;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .stop-button:hover {
+        background: #c41230;
+        box-shadow: 0 4px 12px rgba(227, 24, 55, 0.2);
+      }
+
+      .timer {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.5);
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-family: monospace;
+      }
+
+      .button-container {
+        display: flex;
+        gap: 16px; /* Space between the buttons */
+        justify-content: center; /* Center buttons in the row */
+        margin-top: 20px; /* Optional, adds some space from the webcam or content above */
+      }
+
+      .start-button,
+      .stop-button {
+        margin-bottom: 24px;
+        width: 100%;
+        padding: 16px;
+        background: #e31837;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .start-button {
+        background: #28a745; /* Green for start */
+      }
+
+      .stop-button {
+        background: #e31837; /* Red for stop */
+      }
+
+      .start-button:hover {
+        background: #218838;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+      }
+
+      .stop-button:hover {
+        background: #c41230;
+        box-shadow: 0 4px 12px rgba(227, 24, 55, 0.2);
+      }
+
+      .button-container button:disabled {
+        filter: blur(2px); /* Apply blur effect to disabled button */
+        cursor: not-allowed;
+      }
+
+      .button-container button:disabled:hover {
+        box-shadow: none; /* Remove hover effect when disabled */
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      @media (max-width: 768px) {
+        body {
+          background: linear-gradient(
+            to bottom,
+            #e31837 0%,
+            #e31837 50%,
+            #ffffff 50%,
+            #ffffff 100%
+          );
+        }
+
+        .dashboard-container {
+          padding: 20px;
+          margin: 20px;
+        }
+
+        .section-title {
+          font-size: 1.5rem;
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .nav-profile span {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Include the navigation bar -->
+    <div id="navbar-placeholder"></div>
+
+    <div class="dashboard-container">
+      <h1 class="section-title">Webcam Feed</h1>
+
+      <div class="webcam-container">
+        <div class="webcam-overlay">
+          <div class="webcam-header">
+            <div class="rec-indicator">
+              <div class="video-container">
+                <img src="{{ url_for('video') }}" />
+              </div>
+            </div>
+          </div>
+          <div class="crosshair">
+            <i class="ri-add-line"></i>
+          </div>
+          <div class="timer">00:00:00</div>
+        </div>
+      </div>
+
+      <div class="button-container">
+        <button class="start-button" onclick="startTracking()">
+          <i class="ri-play-circle-line"></i>
+          Start Attendance
+        </button>
+        <button class="stop-button" onclick="stopTracking()" disabled>
+          <i class="ri-stop-circle-line"></i>
+          Stop Attendance
+        </button>
+      </div>
+
+      <table class="attendance-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>LU ID</th>
+          </tr>
+        </thead>
+        <tbody id="attendance-body">
+        <!-- Dynamically populated -->
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      // Load the nav.html content into the #navbar-placeholder
+      fetch("/nav")
+        .then((response) => response.text())
+        .then((data) => {
+          document.getElementById("navbar-placeholder").innerHTML = data;
+        });
+
+      // Timer functionality
+      let seconds = 0;
+      const timerElement = document.querySelector(".timer");
+
+      setInterval(() => {
+        seconds++;
+        const hours = Math.floor(seconds / 3600)
+          .toString()
+          .padStart(2, "0");
+        const minutes = Math.floor((seconds % 3600) / 60)
+          .toString()
+          .padStart(2, "0");
+        const secs = (seconds % 60).toString().padStart(2, "0");
+        timerElement.textContent = `${hours}:${minutes}:${secs}`;
+      }, 1000);
+
+      // Stop button handler
+      document.querySelector(".stop-button").addEventListener("click", () => {
+        if (confirm("Are you sure you want to stop taking attendance?")) {
+          window.location.href = "{{ url_for('after_webcam') }}";
+        }
+      });
+
+      // Get the buttons
+      const startButton = document.querySelector(".start-button");
+      const stopButton = document.querySelector(".stop-button");
+
+      // Function to handle the button logic
+      startButton.addEventListener("click", () => {
+        startButton.disabled = true; // Disable Start button
+        stopButton.disabled = false; // Enable Stop button
+      });
+
+      stopButton.addEventListener("click", () => {
+        stopButton.disabled = true; // Disable Stop button
+        startButton.disabled = false; // Enable Start button
+      });
+
+    let identifiedNamesList = [];
+
+      // Function to start tracking
+      function startTracking() {
+        fetch("/start_tracking")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(data.status);
+            document.querySelector(".start-button").disabled = true;
+            document.querySelector(".stop-button").disabled = false;
+          });
+      }
+
+      // Function to stop tracking and send data
+      function stopTracking() {
+        fetch("/stop_tracking")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(data.status);
+            sendAttendanceData();
+            document.querySelector(".start-button").disabled = false;
+            document.querySelector(".stop-button").disabled = true;
+          });
+      }
+
+      // Fetch the identified names and update the table
+      function fetchIdentifiedNames() {
+        fetch("/get_identified_names")
+          .then((response) => response.json())
+          .then((names) => {
+            names.forEach((name) => {
+              if (!identifiedNamesList.includes(name)) {
+                identifiedNamesList.push(name);
+                updateAttendanceTable(identifiedNamesList);
+              }
+            });
+          })
+          .catch((error) => console.error("Error fetching names:", error));
+      }
+
+      // Update the attendance table
+      function updateAttendanceTable(names) {
+        const tableBody = document.getElementById("attendance-body");
+        tableBody.innerHTML = ""; // Clear previous rows
+
+        names.forEach((name) => {
+          const row = document.createElement("tr");
+
+          const nameCell = document.createElement("td");
+          nameCell.textContent = name;
+
+          const statusCell = document.createElement("td");
+          statusCell.textContent = "Present";
+
+          row.appendChild(nameCell);
+          row.appendChild(statusCell);
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Send the attendance data to the server (e.g., save to database, send via email, etc.)
+      function sendAttendanceData() {
+        const rows = document.querySelectorAll("#attendance-body tr");
+        const attendanceData = [];
+
+        rows.forEach((row) => {
+          const name = row.cells[0].textContent;
+          const status = row.cells[1].textContent;
+          attendanceData.push({ name, status });
+        });
+
+        // Send data to the server (for example, via a POST request)
+        fetch("/send_attendance", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ attendance: attendanceData }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Attendance data sent successfully:", data);
+          })
+          .catch((error) => {
+            console.error("Error sending attendance data:", error);
+          });
+      }
+
+      // Periodically fetch and update the table every 1 second
+      setInterval(fetchIdentifiedNames, 1000);
+    </script>
+  </body>
+</html>

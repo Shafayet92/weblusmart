@@ -1,0 +1,43 @@
+# Ignore the virtual environment directory
+/env/
+
+# Ignore cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore IDE/Editor configuration folders
+.vscode/
+.idea/
+
+# Ignore instance-related settings
+instance/
+
+# Ignore build files
+build/
+dist/
+.eggs/
+*.egg-info/
+
+# Ignore local database files
+*.db
+*.sqlite3
+
+# Ignore environment variables
+.env
+
+# Ignore log files
+*.log
+
+# Ignore temporary folders
+.cache/
+
+# Ignore model training results (if you save or cache large model files here)
+models/
+
+# Ignore static assets like uploaded/generated images
+dataImage/
+
+# Ignore compiled files or artifacts
+htmlcov/

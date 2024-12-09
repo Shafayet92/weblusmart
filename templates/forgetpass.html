@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forget Password - LU Smart</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+          to right,
+          #e31837 0%,
+          #e31837 50%,
+          #ffffff 50%,
+          #ffffff 100%
+        );
+      }
+
+      .forget-container {
+        width: 100%;
+        max-width: 600px;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 24px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        text-align: center;
+      }
+
+      .logo-container {
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .logo {
+        width: 150px;
+        height: auto;
+        margin-bottom: 20px;
+      }
+
+      .title {
+        font-size: 2rem;
+        color: #e31837;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 0.9rem;
+      }
+
+      .form-group {
+        position: relative;
+        margin-bottom: 20px;
+        text-align: left;
+      }
+
+      .input-container {
+        position: relative;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 16px;
+        font-size: 1rem;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        background: #f5f5f5;
+        transition: all 0.3s;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #e31837;
+        background: #ffffff;
+      }
+
+      .form-label {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+        transition: all 0.3s;
+        pointer-events: none;
+      }
+
+      .form-input:focus ~ .form-label,
+      .form-input:not(:placeholder-shown) ~ .form-label {
+        top: -10px;
+        left: 12px;
+        font-size: 0.75rem;
+        padding: 0 4px;
+        background: #fff;
+        color: #e31837;
+      }
+
+      .submit-button {
+        width: 100%;
+        padding: 16px;
+        background: #e31837;
+        color: white;
+        border: none;
+        border-radius: 40px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 30px;
+      }
+
+      .submit-button:hover {
+        background: #c41230;
+        box-shadow: 0 8px 24px rgba(227, 24, 55, 0.2);
+      }
+
+      .login-link {
+        margin-top: 20px;
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      .login-link a {
+        color: #e31837;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .login-link a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          background: linear-gradient(
+            to bottom,
+            #e31837 0%,
+            #e31837 50%,
+            #ffffff 50%,
+            #ffffff 100%
+          );
+          padding: 20px;
+        }
+
+        .forget-container {
+          padding: 24px;
+        }
+
+        .logo {
+          width: 120px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="forget-container">
+      <!-- Logo and Title -->
+      <div class="logo-container">
+        <img
+          src="{{ url_for('static', filename='img/logo.png') }}"
+          alt="LU Logo"
+        />
+        <h1 class="title">Forgot Password</h1>
+        <p class="subtitle">
+          Enter your registered email to reset your password.
+        </p>
+      </div>
+
+      <!-- Forget Password Form -->
+      <form action="{{ url_for('forget_password') }}" method="POST">
+        <!-- Email -->
+        <div class="form-group">
+          <div class="input-container">
+            <input
+              type="email"
+              class="form-input"
+              id="emailInput"
+              name="email"
+              required
+            />
+            <label class="form-label" for="emailInput">University Email</label>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="submit-button">Reset Password</button>
+
+        <!-- Feedback Message -->
+        <div
+          class="feedback-message"
+          style="color: green; margin-top: 20px; display: none"
+        >
+          Password reset link has been sent to your email.
+        </div>
+
+        <!-- Login Link -->
+        <p class="login-link">
+          Remembered your password? <a href="{{ url_for('login') }}">Sign In</a>
+        </p>
+      </form>
+    </div>
+    <script>
+      // Optional Client-side Feedback
+      document.querySelector("form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        document.querySelector(".feedback-message").style.display = "block";
+        console.log("Password reset request submitted");
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Multi-Person Face Recognition</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: #f0f0f0;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .video-container {
+        border: 3px solid #333;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 20px 0;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      img {
+        display: block;
+        width: 100%;
+        max-width: 640px;
+        height: auto;
+      }
+      .info {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .person-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .person-tag {
+        background: #e8f5e9;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 14px;
+      }
+      /* Attendance Table Styles */
+      .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      .attendance-table th,
+      .attendance-table td {
+        padding: 10px;
+        text-align: left;
+        border: 1px solid #ddd;
+      }
+      .attendance-table th {
+        background-color: #f2f2f2;
+      }
+      .button-container {
+        margin-top: 20px;
+      }
+      .start-button,
+      .stop-button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin: 0 10px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+      }
+      .start-button {
+        background-color: #4caf50;
+        color: white;
+      }
+      .stop-button {
+        background-color: #f44336;
+        color: white;
+      }
+      .stop-button:disabled {
+        background-color: #e0e0e0;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Multi-Person Face Recognition</h1>
+
+      <div class="video-container">
+        <img src="{{ url_for('video') }}" />
+      </div>
+
+      <div class="info">
+        <h3>Detection Information:</h3>
+        <p>Colored Box: Known Person</p>
+        <p>Gray Box: Unknown Person</p>
+        <p>
+          Confidence score shows how certain the system is about the recognition
+        </p>
+        <div class="person-list">
+          <div class="person-tag">Lower score = better match</div>
+        </div>
+      </div>
+
+      <!-- Start/Stop Button -->
+      <div class="button-container">
+        <button class="start-button" onclick="startTracking()">
+          Start Attendance
+        </button>
+        <button class="stop-button" onclick="stopTracking()" disabled>
+          Stop Attendance
+        </button>
+      </div>
+
+      <!-- Attendance Table -->
+      <h2>Attendance Table</h2>
+      <table class="attendance-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Present/Absent</th>
+          </tr>
+        </thead>
+        <tbody id="attendance-body">
+          <!-- Dynamically populated -->
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      let identifiedNamesList = [];
+
+      // Function to start tracking
+      function startTracking() {
+        fetch("/start_tracking")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(data.status);
+            document.querySelector(".start-button").disabled = true;
+            document.querySelector(".stop-button").disabled = false;
+          });
+      }
+
+      // Function to stop tracking and send data
+      function stopTracking() {
+        fetch("/stop_tracking")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(data.status);
+            sendAttendanceData();
+            document.querySelector(".start-button").disabled = false;
+            document.querySelector(".stop-button").disabled = true;
+          });
+      }
+
+      // Fetch the identified names and update the table
+      function fetchIdentifiedNames() {
+        fetch("/get_identified_names")
+          .then((response) => response.json())
+          .then((names) => {
+            names.forEach((name) => {
+              if (!identifiedNamesList.includes(name)) {
+                identifiedNamesList.push(name);
+                updateAttendanceTable(identifiedNamesList);
+              }
+            });
+          })
+          .catch((error) => console.error("Error fetching names:", error));
+      }
+
+      // Update the attendance table
+      function updateAttendanceTable(names) {
+        const tableBody = document.getElementById("attendance-body");
+        tableBody.innerHTML = ""; // Clear previous rows
+
+        names.forEach((name) => {
+          const row = document.createElement("tr");
+
+          const nameCell = document.createElement("td");
+          nameCell.textContent = name;
+
+          const statusCell = document.createElement("td");
+          statusCell.textContent = "Present";
+
+          row.appendChild(nameCell);
+          row.appendChild(statusCell);
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Send the attendance data to the server (e.g., save to database, send via email, etc.)
+      function sendAttendanceData() {
+        const rows = document.querySelectorAll("#attendance-body tr");
+        const attendanceData = [];
+
+        rows.forEach((row) => {
+          const name = row.cells[0].textContent;
+          const status = row.cells[1].textContent;
+          attendanceData.push({ name, status });
+        });
+
+        // Send data to the server (for example, via a POST request)
+        fetch("/send_attendance", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ attendance: attendanceData }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Attendance data sent successfully:", data);
+          })
+          .catch((error) => {
+            console.error("Error sending attendance data:", error);
+          });
+      }
+
+      // Periodically fetch and update the table every 1 second
+      setInterval(fetchIdentifiedNames, 1000);
+    </script>
+  </body>
+</html>

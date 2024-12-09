@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LU Smart - Attendance System</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        background: #ffffff;
+      }
+
+      .logo-section {
+        width: 100%;
+        height: 100vh; /* Full viewport height */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e31837;
+        padding: 0;
+      }
+
+      .logo-section img {
+        width: 300px;
+        height: auto;
+      }
+
+      .form-section {
+        width: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        background: #ffffff;
+      }
+
+      .form-container {
+        width: 100%;
+        max-width: 460px;
+        padding: 40px;
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      }
+
+      .form-header {
+        text-align: center;
+        margin-bottom: 40px;
+        color: #666;
+      }
+
+      .form-group {
+        margin-bottom: 24px;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 16px;
+        background: #f8f9fa;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        color: #333;
+        transition: all 0.3s;
+      }
+
+      .form-input:focus {
+        outline: none;
+        background: #fff;
+        box-shadow: 0 0 0 2px rgba(227, 24, 55, 0.2);
+      }
+
+      .form-input::placeholder {
+        color: #666;
+      }
+
+      .forgot-password {
+        display: block;
+        text-align: right;
+        color: #e31837;
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-top: -12px;
+        margin-bottom: 32px;
+      }
+
+      .sign-in-button {
+        width: 100%;
+        padding: 16px;
+        background: #e31837;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 24px;
+      }
+
+      .sign-in-button:hover {
+        background: #d31730;
+        transform: translateY(-2px);
+      }
+
+      .register-link {
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .register-link a {
+        color: #e31837;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .graduation-cap {
+        position: absolute;
+        top: 40px;
+        right: 100px;
+        width: 100px;
+        opacity: 0.1;
+      }
+
+      .input-with-icon {
+        position: relative;
+      }
+
+      .input-icon {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+        cursor: pointer;
+      }
+      .logo {
+        margin: 0 auto; /* This will center the logo */
+        display: block;
+        top: 20px; /* Adjust as needed */
+      }
+
+      @media (max-width: 768px) {
+        body {
+          flex-direction: column;
+        }
+
+        .logo-section,
+        .form-section {
+          width: 100%;
+          padding: 20px;
+        }
+
+        .logo-section {
+          padding: 40px 20px;
+        }
+
+        .form-container {
+          padding: 20px;
+          box-shadow: none;
+        }
+
+        .graduation-cap {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Logo Section -->
+    <div class="logo-section">
+      <img
+        src="{{ url_for('static', filename='img/app_logo.png') }}"
+        alt="App Logo"
+      />
+    </div>
+    <!-- Form Section -->
+    <div class="form-section">
+      <div class="form-container">
+        <!-- Graduation Cap -->
+        <img
+          src="{{ url_for('static', filename='img/logo.png') }}"
+          alt="Graduation Cap"
+          class="logo"
+        />
+
+        <!-- Form Header -->
+        <div class="form-header">
+          <p>Real-Time Face Recognition Attendance System</p>
+        </div>
+        {% if error_message %}
+        <script type="text/javascript">
+          alert("{{ error_message }}");
+        </script>
+        {% endif %}
+        <!-- Login Form -->
+        <form action="" method="POST">
+          <div class="form-group">
+            <div class="input-with-icon">
+              <!-- Email Input -->
+              <input
+                type="email"
+                class="form-input"
+                placeholder="University Email"
+                name="emailInput"
+                required
+              />
+              <i class="ri-mail-line input-icon"></i>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="input-with-icon">
+              <!-- Password Input -->
+              <input
+                type="password"
+                class="form-input"
+                placeholder="Password"
+                name="password"
+                required
+              />
+              <i class="ri-eye-off-line input-icon toggle-password"></i>
+            </div>
+          </div>
+
+          <a href="{{ url_for('forget_password') }}" class="forgot-password">
+            Forgot password?
+          </a>
+
+          <!-- Sign In Button -->
+          <button type="submit" class="sign-in-button">Sign In</button>
+
+          <p class="register-link">
+            New faculty member?
+            <a href="{{ url_for('register') }}">Register Here</a>
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Password toggle functionality
+      document
+        .querySelector(".toggle-password")
+        .addEventListener("click", function () {
+          const input = this.parentElement.querySelector("input");
+          const type =
+            input.getAttribute("type") === "password" ? "text" : "password";
+          input.setAttribute("type", type);
+          this.className = `ri-${
+            type === "password" ? "eye-off" : "eye"
+          }-line input-icon`;
+        });
+    </script>
+  </body>
+</html>
