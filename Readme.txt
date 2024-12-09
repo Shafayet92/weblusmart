@@ -6,8 +6,8 @@
 #### 1. Clone the Repository
 Open your terminal or command prompt and run:
 ```
-git clone <repository-url>
-cd lusmart-
+git clone https://github.com/Shafayet92/weblusmart.git
+cd weblusmart
 ```
 
 #### 2. Set Up the Virtual Environment
