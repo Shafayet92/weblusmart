@@ -242,7 +242,14 @@
       .button-container button:disabled:hover {
         box-shadow: none; /* Remove hover effect when disabled */
       }
-
+.section-title2 {
+  font-size: 1rem; /* Adjust the text size as needed */
+  color: #333; /* Change the text color if required */
+  font-weight: bold; /* Keep the text bold */
+  margin-top: 0px 0px 10px 0px ; /* Adjust spacing above if needed */
+  text-align: center; /* Center-align the text horizontally */
+padding-bottom: 10px;
+}
       @keyframes blink {
         50% {
           opacity: 0;
@@ -268,6 +275,15 @@
         .section-title {
           font-size: 1.5rem;
         }
+         .section-title2 {
+          font-size: 1rem; /* Adjust the text size as needed */
+          color: #333; /* Change the text color if required */
+          font-weight: bold; /* Keep the text bold */
+          margin-top: 0px 0px 10px 0px ; /* Adjust spacing above if needed */
+          text-align: center; /* Center-align the text horizontally */
+
+        }
+
 
         .nav-links {
           display: none;
@@ -278,6 +294,8 @@
         }
       }
     </style>
+
+
   </head>
   <body>
     <!-- Include the navigation bar -->
@@ -285,7 +303,7 @@
 
     <div class="dashboard-container">
       <h1 class="section-title">Webcam Feed</h1>
-
+<h1 class="section-title2">{{ subject }}</h1>
       <div class="webcam-container">
         <div class="webcam-overlay">
           <div class="webcam-header">
@@ -318,6 +336,7 @@
           <tr>
             <th>Name</th>
             <th>LU ID</th>
+            <th>Time</th>
           </tr>
         </thead>
         <tbody id="attendance-body">
@@ -327,142 +346,152 @@
       </table>
     </div>
 
-    <script>
-      // Load the nav.html content into the #navbar-placeholder
+
+
+<script>
+  // Load the nav.html content into the #navbar-placeholder
       fetch("/nav")
         .then((response) => response.text())
         .then((data) => {
           document.getElementById("navbar-placeholder").innerHTML = data;
         });
 
-      // Timer functionality
-      let seconds = 0;
-      const timerElement = document.querySelector(".timer");
 
-      setInterval(() => {
-        seconds++;
-        const hours = Math.floor(seconds / 3600)
-          .toString()
-          .padStart(2, "0");
-        const minutes = Math.floor((seconds % 3600) / 60)
-          .toString()
-          .padStart(2, "0");
-        const secs = (seconds % 60).toString().padStart(2, "0");
-        timerElement.textContent = `${hours}:${minutes}:${secs}`;
-      }, 1000);
+  // Timer functionality
+  let seconds = 0;
+  const timerElement = document.querySelector(".timer");
 
-      // Stop button handler
-      document.querySelector(".stop-button").addEventListener("click", () => {
-        if (confirm("Are you sure you want to stop taking attendance?")) {
-          window.location.href = "{{ url_for('after_webcam') }}";
+  setInterval(() => {
+    seconds++;
+    const hours = Math.floor(seconds / 3600).toString().padStart(2, "0");
+    const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
+    const secs = (seconds % 60).toString().padStart(2, "0");
+    timerElement.textContent = `${hours}:${minutes}:${secs}`;
+  }, 1000);
+
+  // Start/Stop buttons logic
+  const startButton = document.querySelector(".start-button");
+  const stopButton = document.querySelector(".stop-button");
+
+  startButton.addEventListener("click", () => {
+    startButton.disabled = true; // Disable Start button
+    stopButton.disabled = false; // Enable Stop button
+    startTracking();  // Start tracking when start button is clicked
+  });
+
+  stopButton.addEventListener("click", () => {
+    stopButton.disabled = true; // Disable Stop button
+    startButton.disabled = false; // Enable Start button
+    stopTracking();  // Stop tracking when stop button is clicked
+  });
+
+  // Tracking functionality
+  let identifiedNamesList = new Set(); // Track identified names as a Set (unique)
+
+  // Function to start tracking
+  function startTracking() {
+    fetch("/start_tracking")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data.status);
+        // Add any other UI updates needed
+      })
+      .catch((error) => console.error("Error starting tracking:", error));
+  }
+
+  // Function to stop tracking and send data
+  function stopTracking() {
+    fetch("/stop_tracking")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data.status);
+        sendAttendanceData();
+        window.location.href = "/after_webcam";  // Redirect after stopping
+      })
+      .catch((error) => console.error("Error stopping tracking:", error));
+  }
+
+  // Fetch the identified names and update the table
+  function fetchIdentifiedNames() {
+    fetch("/get_identified_names")
+      .then((response) => response.json())
+      .then((data) => {
+        let newEntries = [];
+
+        data.forEach((entry) => {
+          const identifier = `${entry.name}_${entry.lu_id}`;
+
+          // Only add the student if they haven't been identified already
+          if (!identifiedNamesList.has(identifier)) {
+            identifiedNamesList.add(identifier); // Mark as identified
+            newEntries.push(entry); // Collect new entries to update the table
+          }
+        });
+
+        // Update the table only with new entries
+        if (newEntries.length > 0) {
+          updateAttendanceTable(newEntries);
         }
+      })
+      .catch((error) => console.error("Error fetching names:", error));
+  }
+
+  // Update the attendance table with new entries
+  function updateAttendanceTable(newEntries) {
+    const tableBody = document.getElementById("attendance-body");
+
+    // Add only new rows
+    newEntries.forEach((entry) => {
+      const row = document.createElement("tr");
+
+      const nameCell = document.createElement("td");
+      nameCell.textContent = entry.name;
+
+      const luIdCell = document.createElement("td");
+      luIdCell.textContent = entry.lu_id;
+
+      const timeCell = document.createElement("td");
+      timeCell.textContent = entry.time; // Add the time in each row
+
+      row.appendChild(nameCell);
+      row.appendChild(luIdCell);
+      row.appendChild(timeCell);
+      tableBody.appendChild(row);
+    });
+  }
+
+  // Send the attendance data to the server
+  function sendAttendanceData() {
+    const rows = document.querySelectorAll("#attendance-body tr");
+    const attendanceData = [];
+
+    rows.forEach((row) => {
+      const name = row.cells[0].textContent;
+      const luId = row.cells[1].textContent;
+      attendanceData.push({ name, lu_id: luId });
+    });
+
+    fetch("/save_attendance", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ attendance: attendanceData }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Attendance data sent successfully:", data);
+      })
+      .catch((error) => {
+        console.error("Error sending attendance data:", error);
       });
+  }
 
-      // Get the buttons
-      const startButton = document.querySelector(".start-button");
-      const stopButton = document.querySelector(".stop-button");
+  // Periodically fetch and update the table every 1 second
+  setInterval(fetchIdentifiedNames, 100);
+</script>
 
-      // Function to handle the button logic
-      startButton.addEventListener("click", () => {
-        startButton.disabled = true; // Disable Start button
-        stopButton.disabled = false; // Enable Stop button
-      });
 
-      stopButton.addEventListener("click", () => {
-        stopButton.disabled = true; // Disable Stop button
-        startButton.disabled = false; // Enable Start button
-      });
 
-    let identifiedNamesList = [];
-
-      // Function to start tracking
-      function startTracking() {
-        fetch("/start_tracking")
-          .then((response) => response.json())
-          .then((data) => {
-            console.log(data.status);
-            document.querySelector(".start-button").disabled = true;
-            document.querySelector(".stop-button").disabled = false;
-          });
-      }
-
-      // Function to stop tracking and send data
-      function stopTracking() {
-        fetch("/stop_tracking")
-          .then((response) => response.json())
-          .then((data) => {
-            console.log(data.status);
-            sendAttendanceData();
-            document.querySelector(".start-button").disabled = false;
-            document.querySelector(".stop-button").disabled = true;
-          });
-      }
-
-      // Fetch the identified names and update the table
-      function fetchIdentifiedNames() {
-        fetch("/get_identified_names")
-          .then((response) => response.json())
-          .then((names) => {
-            names.forEach((name) => {
-              if (!identifiedNamesList.includes(name)) {
-                identifiedNamesList.push(name);
-                updateAttendanceTable(identifiedNamesList);
-              }
-            });
-          })
-          .catch((error) => console.error("Error fetching names:", error));
-      }
-
-      // Update the attendance table
-      function updateAttendanceTable(names) {
-        const tableBody = document.getElementById("attendance-body");
-        tableBody.innerHTML = ""; // Clear previous rows
-
-        names.forEach((name) => {
-          const row = document.createElement("tr");
-
-          const nameCell = document.createElement("td");
-          nameCell.textContent = name;
-
-          const statusCell = document.createElement("td");
-          statusCell.textContent = "Present";
-
-          row.appendChild(nameCell);
-          row.appendChild(statusCell);
-          tableBody.appendChild(row);
-        });
-      }
-
-      // Send the attendance data to the server (e.g., save to database, send via email, etc.)
-      function sendAttendanceData() {
-        const rows = document.querySelectorAll("#attendance-body tr");
-        const attendanceData = [];
-
-        rows.forEach((row) => {
-          const name = row.cells[0].textContent;
-          const status = row.cells[1].textContent;
-          attendanceData.push({ name, status });
-        });
-
-        // Send data to the server (for example, via a POST request)
-        fetch("/send_attendance", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ attendance: attendanceData }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            console.log("Attendance data sent successfully:", data);
-          })
-          .catch((error) => {
-            console.error("Error sending attendance data:", error);
-          });
-      }
-
-      // Periodically fetch and update the table every 1 second
-      setInterval(fetchIdentifiedNames, 1000);
-    </script>
   </body>
 </html>

@@ -288,6 +288,7 @@
             class="subject-radio"
             id="subject1"
             name="subject"
+            data-course="UX with AI (INEN-6301-02)"
           />
           <label class="subject-label" for="subject1"
             >UX with AI (INEN-6301-02)</label
@@ -299,6 +300,7 @@
             class="subject-radio"
             id="subject2"
             name="subject"
+            data-course="Applied Programming (INEN-5301-01)"
           />
           <label class="subject-label" for="subject2"
             >Applied Programming (INEN-5301-01)</label
@@ -310,6 +312,7 @@
             class="subject-radio"
             id="subject3"
             name="subject"
+            data-course="Simulation of IE Systems (INEN-5375-47F)"
           />
           <label class="subject-label" for="subject3"
             >Simulation of IE Systems (INEN-5375-47F)</label
@@ -333,9 +336,10 @@
       const radioButtons = document.querySelectorAll(".subject-radio");
       const nextButton = document.getElementById("nextButton");
 
+      // Enable/disable the Next button based on selection
       radioButtons.forEach((radio) => {
         radio.addEventListener("change", () => {
-          nextButton.disabled = !radio.checked;
+          nextButton.disabled = false; // Enable the button if a selection is made
         });
       });
 
@@ -343,8 +347,10 @@
         const selectedSubject = document.querySelector(
           ".subject-radio:checked"
         );
+
         if (selectedSubject) {
-          window.location.href = "{{ url_for('webcam') }}";
+          const courseName = encodeURIComponent(selectedSubject.dataset.course); // Fetch the `data-course` value safely
+          window.location.href = `/webcam?subject=${courseName}`; // Pass selected course as query param
         } else {
           alert("Please select a course first");
         }

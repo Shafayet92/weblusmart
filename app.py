@@ -4,6 +4,9 @@ import os
 import numpy as np
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
+from datetime import datetime
+import time
+
 
 cred_path = os.path.join("static", "js", "key.json")
 cred = credentials.Certificate(cred_path)
@@ -13,7 +16,9 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()  # Initialize Firestore
 
 
+
 app = Flask(__name__)
+
 
 # Global variables
 face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -23,49 +28,69 @@ label_dict = {}
 identified_names = []  # List to hold the names of identified people
 tracking_active = False  # Flag to control the attendance tracking state
 
+# Reference to the students collection
+students_collection = db.collection('students')
+students_attendance = db.collection('attendances')
+
+
+
 def train_model():
     global model_trained, label_dict
     faces = []
     labels = []
     current_label = 0
 
-    # First pass to create label dictionary
+    label_dict = {}  # Reset label dictionary
+
+    # First pass: Create label dictionary based on LU IDs
     for filename in os.listdir('dataImage'):
         if filename.lower().endswith(('.jpg', '.jpeg', '.png')):  # Filter for image files
-            name = filename.split('_')[0].lower()
-            if name not in label_dict:
-                label_dict[name] = current_label
+            lu_id = filename.split('_')[0]  # Extract LU ID
+            if lu_id not in label_dict:
+                label_dict[lu_id] = current_label
                 current_label += 1
 
-    print("Found people:", list(label_dict.keys()))
+    print("Found LU IDs:", list(label_dict.keys()))
 
-    # Second pass to collect faces and labels
+    # Second pass: Collect faces and labels
     for filename in os.listdir('dataImage'):
-        if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+        if filename.lower().endswith(('.jpg', '.jpeg', '.png')):  # Filter for image files
             image_path = os.path.join('dataImage', filename)
             image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
             if image is None:
+                print(f"Could not read image: {filename}")
                 continue
 
-            detected_faces = face_detector.detectMultiScale(image, 1.1, 5)
+            # Improve face detection by adjusting parameters
+            detected_faces = face_detector.detectMultiScale(image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
-            if len(detected_faces) > 0:
-                for (x, y, w, h) in detected_faces:
-                    face = cv2.resize(image[y:y+h, x:x+w], (150, 150))
-                    name = filename.split('_')[0].lower()
-                    label = label_dict[name]
-                    faces.append(face)
-                    labels.append(label)
+            for (x, y, w, h) in detected_faces:
+                face = cv2.resize(image[y:y+h, x:x+w], (150, 150))
+
+                # Optionally, apply histogram equalization to improve image quality
+                face = cv2.equalizeHist(face)
+                face = cv2.GaussianBlur(face, (5, 5), 0)
+
+                # Map LU ID to label
+                lu_id = filename.split('_')[0]
+                label = label_dict[lu_id]
+
+                faces.append(face)
+                labels.append(label)
 
     if len(faces) > 0:
+        # Train the model (increase iterations by using more data and possibly changing classifier)
         recognizer.train(faces, np.array(labels))
         model_trained = True
         print("Model training completed")
+    else:
+        print("No faces found for training.")
+
 
 def generate_frames():
-    global identified_names  # Use the global list to store names
-    global tracking_active    # Control tracking state
+    global identified_names, tracking_active
+    global students_collection  # Ensure this is accessible
     camera = cv2.VideoCapture(0)
 
     while True:
@@ -75,10 +100,11 @@ def generate_frames():
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        faces = face_detector.detectMultiScale(gray, 1.1, 5)
+        # Use face detection to find faces
+        faces = face_detector.detectMultiScale(gray, 1.1, 5, minSize=(30, 30))
 
         if tracking_active:
-            identified_names = []
+            identified_names = []  # Reset identified names when tracking is active
 
         for (x, y, w, h) in faces:
             if model_trained:
@@ -87,27 +113,44 @@ def generate_frames():
                 try:
                     label, confidence = recognizer.predict(face_roi)
 
-                    name = [k for k, v in label_dict.items() if v == label][0].title()
+                    if confidence < 1000:  # Acceptable threshold
+                        lu_id = [k for k, v in label_dict.items() if v == label][0]
 
-                    if confidence < 100:  # Adjust this threshold as needed
-                        color = (0, 255, 0)  # Green
+                        # Fetch student data from Firebase
+                        student_doc = students_collection.document(lu_id).get()
+                        if student_doc.exists:
+                            student_data = student_doc.to_dict()
+                            name = student_data.get('name', 'Unknown')
+                        else:
+                            name = "Unknown"
+
+                        color = (0, 255, 0)  # Green for recognized
+
+                        # Get the current time in AM/PM format
+                        current_time = datetime.now().strftime("%I:%M:%S %p")  # 12-hour format with AM/PM
+
                         if tracking_active:
-                            identified_names.append(name)  # Add identified name to the list
+                            identified_names.append({'name': name, 'lu_id': lu_id, 'time': current_time})
                     else:
                         name = "Unknown"
-                        color = (0, 0, 255)  # Red
+                        lu_id = "N/A"
+                        color = (0, 0, 255)  # Red for unrecognized
+                        current_time = "N/A"
 
+                    # Draw bounding box and label with time
                     cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
-                    cv2.putText(frame, f"{name} ({confidence:.1f})",
-                              (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+                    cv2.putText(frame, f"{name} ({lu_id})", (x, y-10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
 
                 except Exception as e:
+                    print(f"Error during prediction: {e}")
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
             else:
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 255), 2)
-                cv2.putText(frame, "Training Required",
-                          (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
+                cv2.putText(frame, "Training Required", (x, y-10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
 
+        # Display training status
         status_text = "Model Trained" if model_trained else "Model Not Trained"
         cv2.putText(frame, status_text, (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0) if model_trained else (0, 0, 255), 2)
@@ -198,7 +241,28 @@ def dashboard():
 # Route for webcam.html
 @app.route('/webcam')
 def webcam():
-    return render_template('webcam.html')
+    # Extract the selected subject name from query parameters
+    subject = request.args.get("subject")
+    return render_template('webcam.html', subject=subject)
+
+# Route to save attendance data to Firestore
+@app.route('/save_attendance', methods=['POST'])
+def save_attendance():
+    attendance_data = request.json.get('attendance', [])
+    course_id = request.args.get("course_id", "INEN-5301-01")  # Use query parameter or default
+    date = datetime.now().strftime("%Y-%m-%d")
+
+    for student in attendance_data:
+        attendance_record = {
+            "lu_id": student.get("lu_id"),
+            "courseId": course_id,
+            "date": date,
+            "status": "present",
+        }
+        students_attendance.add(attendance_record)
+
+    return jsonify({"status": "success", "message": "Attendance saved successfully"}), 200
+
 
 # Route for after_webcam.html
 @app.route('/after_webcam')
@@ -271,9 +335,16 @@ def train():
     train_model()
     return "Training completed"
 
+
 @app.route('/get_identified_names')
 def get_identified_names():
-    return jsonify(identified_names)
+    global identified_names
+    try:
+        # Ensure the identified names are in the format [{'name': ..., 'lu_id': ...}]
+        return jsonify(identified_names)
+    except Exception as e:
+        print(f"Error fetching identified names: {e}")
+        return jsonify([])
 
 @app.route('/start_tracking')
 def start_tracking():
@@ -287,9 +358,8 @@ def stop_tracking():
     tracking_active = False
     return jsonify({"status": "Tracking stopped"})
 
-
-print("Starting initial training...")
-train_model()
-port = int(os.environ.get('PORT', 5000))  # Render sets the PORT environment variable
-app.run(host='0.0.0.0', port=port)
-
+if __name__ == "__main__":
+    print("Starting initial training...")
+    train_model()
+    port = int(os.environ.get('PORT', 5000))  # Render sets the PORT environment variable
+    app.run(host='0.0.0.0', port=port)
