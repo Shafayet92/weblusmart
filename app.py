@@ -372,7 +372,7 @@ def update_attendance_final():
             'status': status
         })
         total_classes += 1
-        if status == "present":
+        if (status == "present") or (status == "excuse"):
             present_count += 1
 
     # Sort attendance data by date (assuming 'date' is in a format like 'YYYY-MM-DD')
@@ -402,31 +402,25 @@ def update_attendance_final():
 @app.route('/update_attendance', methods=['POST'])
 def update_attendance():
     data = request.get_json()
-    attendance = data.get('attendance')
+    attendance_data = data.get('attendance')
     lu_id = data.get('lu_id')
     subject_code = data.get('subject_code')
 
-    if not attendance or not lu_id or not subject_code:
-        return jsonify({"error": "Missing data"}), 400
+     # Update the attendance in Firestore
+    for record in attendance_data:
+        class_name = record.get('class_name')
+        status = record.get('status')
+        date = record.get('date')
 
-    # Loop through the attendance records and update them in Firestore
-    for record in attendance:
-        # Search for existing attendance record
+        # Fetch the document to update based on lu_id and subject_code
         attendance_ref = db.collection('attendances')
-        attendance_query = attendance_ref.where('lu_id', '==', lu_id)\
-                                         .where('subject_code', '==', subject_code)\
-                                         .where('class_name', '==', record['class_name'])\
-                                         .where('date', '==', record['date'])
+        query = attendance_ref.where('lu_id', '==', lu_id).where('courseId', '==', subject_code).where('date', '==', date)
+        docs = query.stream()
 
-        # Get the document(s) for the specific class and student
-        attendance_docs = attendance_query.stream()
-
-        for doc in attendance_docs:
-            # Update the attendance record
-            doc.reference.update({
-                'status': record['status'],
-                'updated_at': firestore.SERVER_TIMESTAMP,
-            })
+        # Update the attendance status
+        for doc in docs:
+            doc_ref = attendance_ref.document(doc.id)
+            doc_ref.update({'status': status})
 
     return jsonify({"message": "Attendance updated successfully"})
 

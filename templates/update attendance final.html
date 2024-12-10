@@ -318,7 +318,7 @@
         const selects = document.querySelectorAll(".attendance-select");
         const total = selects.length;
         const present = Array.from(selects).filter(
-          (s) => s.value === "present"
+          (s) => s.value === "present" || s.value === "excuse"
         ).length;
         const percentage = Math.round((present / total) * 100);
 
@@ -355,19 +355,19 @@
             `Present: ${present}\n` +
             `Absent: ${absent}\n` +
             `Excused: ${excused}\n\n` +
-            `Attendance Percentage: ${Math.round((present / total) * 100)}%`
+            `Attendance Percentage: ${Math.round(((present+excused) / total) * 100)}%`
         );
       }
 
       function saveChanges() {
   const attendance = Array.from(document.querySelectorAll(".attendance-select")).map((select) => ({
     class_name: select.closest("tr").querySelector("td").textContent,
-    status: select.value,
+    status: select.value === "excuse" ? "present" : select.value,
     date: select.closest("tr").querySelector(".date-cell").textContent,
   }));
 
   // Send the updated attendance to Flask via a POST request
-  fetch("/save_attendance", {
+  fetch("/update_attendance", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -381,13 +381,14 @@
   .then(response => response.json())
   .then(data => {
     alert("Attendance saved successfully!");
-    window.location.href = "{{ url_for('dashboard') }}";  // Redirect to dashboard or any other page
+    window.location.href = "{{ url_for('after_webcam') }}";  // Redirect to after_webcam route
   })
   .catch(error => {
     console.error("Error saving attendance:", error);
     alert("There was an error saving the attendance. Please try again.");
   });
 }
+
 
     </script>
   </body>
