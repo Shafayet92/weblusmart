@@ -330,8 +330,21 @@ def update_attendance_before():
     else:
         subject_name = "Course Not Found"
 
+    # Fetch student data for the subject from Firestore
+    students_ref = db.collection('students')  # Replace with the collection where students are stored
+    students_query = students_ref.where('enrolledCourses', 'array_contains', subject_code)  # Filter by course code
+
+    # Get all students matching the course code
+    students = []
+    for student in students_query.stream():
+        student_data = student.to_dict()
+        students.append({
+            'name': student_data.get('name'),
+            'lu_id': student.id
+        })
+
     # Pass the course details to the template
-    return render_template('update attendance before.html', subject_code=subject_code, subject_name=subject_name)
+    return render_template('update attendance before.html', subject_code=subject_code, subject_name=subject_name, students=students)
 
 
 # Route for update attendance final.html
