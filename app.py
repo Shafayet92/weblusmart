@@ -16,7 +16,6 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()  # Initialize Firestore
 
 
-
 app = Flask(__name__)
 
 
@@ -31,7 +30,7 @@ tracking_active = False  # Flag to control the attendance tracking state
 # Reference to the students collection
 students_collection = db.collection('students')
 students_attendance = db.collection('attendances')
-
+courses_collection = db.collection('courses')
 
 
 def train_model():
@@ -253,14 +252,42 @@ def save_attendance():
     course_id = request.args.get("course_id", "INEN-5301-01")  # Use query parameter or default
     date = datetime.now().strftime("%Y-%m-%d")
 
-    for student in attendance_data:
-        attendance_record = {
-            "lu_id": student.get("lu_id"),
-            "courseId": course_id,
-            "date": date,
-            "status": "present",
-        }
-        students_attendance.add(attendance_record)
+    # Step 1: Get all students enrolled in the course
+    enrolled_students_query = students_collection.stream()  # Fetch all students
+    enrolled_students = []
+
+    for student in enrolled_students_query:
+        student_data = student.to_dict()
+        if course_id in student_data.get("enrolledCourses", []):  # Check if enrolled in the course
+            enrolled_students.append({
+                "lu_id": student.id,  # LU ID from document ID
+                "name": student_data.get("name"),
+            })
+
+    # Step 2: Extract LU IDs of students marked as present
+    present_lu_ids = {student.get("lu_id") for student in attendance_data}
+
+    # Step 3: Save attendance records for all students in the course
+    for student in enrolled_students:
+        lu_id = student['lu_id']
+        name = student['name']
+
+        # Check if a record for the student already exists for the date
+        existing_record_query = students_attendance.where('lu_id', '==', lu_id).where('courseId', '==', course_id).where('date', '==', date).get()
+
+        if not existing_record_query:  # If no existing record
+            # Determine the attendance status
+            status = "present" if lu_id in present_lu_ids else "absent"
+
+            # Create and save the attendance record
+            attendance_record = {
+                "lu_id": lu_id,
+                "name": name,
+                "courseId": course_id,
+                "date": date,
+                "status": status,
+            }
+            students_attendance.add(attendance_record)
 
     return jsonify({"status": "success", "message": "Attendance saved successfully"}), 200
 
@@ -296,28 +323,76 @@ def update_attendance_final():
     return render_template('update attendance final.html')
 
 
-# Route for view attendance.html
+# # Route for view attendance.html
+# @app.route('/view_attendance', methods=['GET', 'POST'])
+# def view_attendance():
+#     if request.method == 'POST':
+#         # Get the selected subject and date from the form submission
+#         subject_name = request.form.get('subject')
+#         attendance_date = request.form.get('attendanceDate')
+
+#         if subject_name and attendance_date:
+#             # Render the template with the selected subject and date
+#             return render_template(
+#                 'view attendance.html',
+#                 subject=subject_name,
+#                 date=attendance_date
+#             )
+#         else:
+#             # Handle case where subject or date is missing
+#             return "Subject or date not selected", 400
+
+#     # Default GET request
+#     return render_template('view attendance.html', subject="Default Course Name", date="No Date Provided")
+
 @app.route('/view_attendance', methods=['GET', 'POST'])
 def view_attendance():
     if request.method == 'POST':
-        # Get the selected subject and date from the form submission
-        subject_name = request.form.get('subject')
+        subject_code = request.form.get('subject')
         attendance_date = request.form.get('attendanceDate')
 
-        if subject_name and attendance_date:
-            # Render the template with the selected subject and date
-            return render_template(
-                'view attendance.html',
-                subject=subject_name,
-                date=attendance_date
-            )
-        else:
-            # Handle case where subject or date is missing
-            return "Subject or date not selected", 400
+        if subject_code and attendance_date:
+            # Fetch the course data using the subject code
+            subject_data = courses_collection.document(subject_code).get()
 
-    # Default GET request
-    return render_template('view attendance.html', subject="Default Course Name", date="No Date Provided")
+            # Check if the subject document exists and retrieve name, code, and description
+            if subject_data.exists:
+                subject_name = subject_data.to_dict().get('name', 'Unknown Course')
+                subject_code = subject_data.to_dict().get('code', 'Unknown Code')
+                subject_description = subject_data.to_dict().get('description', 'No Description Available')
+            else:
+                return "Course not found", 404  # If the course doesn't exist in Firestore
 
+            # Fetch attendance data using course code and date
+            attendance_query = students_attendance.where('courseId', '==', subject_code).where('date', '==', attendance_date)
+            attendance_docs = attendance_query.stream()
+
+            # Format attendance data for the response
+            attendance_data = [
+                {
+                    'name': students_collection.document(doc.to_dict().get('lu_id')).get().to_dict().get('name', 'Unknown'),
+                    'lu_id': doc.to_dict().get('lu_id'),
+                    'status': doc.to_dict().get('status', 'Absent').capitalize()
+                }
+                for doc in attendance_docs
+            ]
+
+            # Render the view attendance page with the necessary data
+            return render_template('view attendance.html',
+                                   subject_name=subject_name,
+                                   subject_code=subject_code,
+                                   subject_description=subject_description,
+                                   date=attendance_date,
+                                   attendance_data=attendance_data)
+
+        return "Subject or date not selected", 400
+
+    # In case of GET request, return a default view
+    return render_template('view attendance.html',
+                           subject_name="Default Course Name",
+                           subject_code="No Code Provided",
+                           subject_description="No Description Provided",
+                           date="No Date Provided")
 
 
 # Route for view course attendance.html
@@ -358,6 +433,8 @@ def stop_tracking():
     global tracking_active
     tracking_active = False
     return jsonify({"status": "Tracking stopped"})
+
+
 
 if __name__ == "__main__":
     print("Starting initial training...")

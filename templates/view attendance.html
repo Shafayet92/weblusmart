@@ -284,7 +284,7 @@
 
     <div class="dashboard-container">
       <div class="header-container">
-        <h3 class="section-title">{{ subject}}</h3>
+        <h3 class="section-title">{{ subject_name }} ({{ subject_code }})</h3>
 
         <h1 class="section-title2">{{ date }}</h1>
       </div>
@@ -298,16 +298,27 @@
           </tr>
         </thead>
         <tbody>
+          {% for student in attendance_data %}
           <tr>
-            <td class="student-name">Student 1</td>
-            <td class="student-luId">L20123123</td>
+            <td class="student-name">{{ student.name }}</td>
+            <td>{{ student.lu_id }}</td>
             <td>
+              {% if student.status == "Present" %}
               <div class="status-present">
-                <i class="ri-checkbox-circle-fill"></i>
-                Present
+                <i class="ri-checkbox-circle-fill"></i> Present
               </div>
+              {% elif student.status == "Excused" %}
+              <div class="status-excused">
+                <i class="ri-information-line"></i> Excused
+              </div>
+              {% else %}
+              <div class="status-absent">
+                <i class="ri-close-circle-fill"></i> Absent
+              </div>
+              {% endif %}
             </td>
           </tr>
+          {% endfor %}
         </tbody>
       </table>
 
