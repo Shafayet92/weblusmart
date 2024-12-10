@@ -161,6 +161,7 @@ def generate_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+
 # Route for LU Smart LOG in.html
 @app.route('/', methods=['GET', 'POST'], endpoint='login')
 def index():

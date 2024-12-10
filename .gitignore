@@ -40,4 +40,4 @@ dist/
 # Ignore compiled files or artifacts
 htmlcov/
 
-static\js\key.json
+/static/js/key.json
