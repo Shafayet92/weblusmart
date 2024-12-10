@@ -242,14 +242,14 @@
       .button-container button:disabled:hover {
         box-shadow: none; /* Remove hover effect when disabled */
       }
-.section-title2 {
-  font-size: 1rem; /* Adjust the text size as needed */
-  color: #333; /* Change the text color if required */
-  font-weight: bold; /* Keep the text bold */
-  margin-top: 0px 0px 10px 0px ; /* Adjust spacing above if needed */
-  text-align: center; /* Center-align the text horizontally */
-padding-bottom: 10px;
-}
+      .section-title2 {
+        font-size: 1rem; /* Adjust the text size as needed */
+        color: #333; /* Change the text color if required */
+        font-weight: bold; /* Keep the text bold */
+        margin-top: 0px 0px 10px 0px; /* Adjust spacing above if needed */
+        text-align: center; /* Center-align the text horizontally */
+        padding-bottom: 10px;
+      }
       @keyframes blink {
         50% {
           opacity: 0;
@@ -275,15 +275,13 @@ padding-bottom: 10px;
         .section-title {
           font-size: 1.5rem;
         }
-         .section-title2 {
+        .section-title2 {
           font-size: 1rem; /* Adjust the text size as needed */
           color: #333; /* Change the text color if required */
           font-weight: bold; /* Keep the text bold */
-          margin-top: 0px 0px 10px 0px ; /* Adjust spacing above if needed */
+          margin-top: 0px 0px 10px 0px; /* Adjust spacing above if needed */
           text-align: center; /* Center-align the text horizontally */
-
         }
-
 
         .nav-links {
           display: none;
@@ -294,8 +292,6 @@ padding-bottom: 10px;
         }
       }
     </style>
-
-
   </head>
   <body>
     <!-- Include the navigation bar -->
@@ -303,7 +299,9 @@ padding-bottom: 10px;
 
     <div class="dashboard-container">
       <h1 class="section-title">Webcam Feed</h1>
-<h1 class="section-title2">{{ subject }}</h1>
+      <h1 class="section-title2">{{ subject }}</h1>
+      <input type="hidden" id="subject" value="{{ subject }}" />
+
       <div class="webcam-container">
         <div class="webcam-overlay">
           <div class="webcam-header">
@@ -322,12 +320,10 @@ padding-bottom: 10px;
 
       <div class="button-container">
         <button class="start-button" onclick="startTracking()">
-          <i class="ri-play-circle-line"></i>
-          Start Attendance
+          <i class="ri-play-circle-line"></i> Start Attendance
         </button>
         <button class="stop-button" onclick="stopTracking()" disabled>
-          <i class="ri-stop-circle-line"></i>
-          Stop Attendance
+          <i class="ri-stop-circle-line"></i> Stop Attendance
         </button>
       </div>
 
@@ -340,158 +336,166 @@ padding-bottom: 10px;
           </tr>
         </thead>
         <tbody id="attendance-body">
-        <!-- Dynamically populated -->
-          </tr>
+          <!-- Dynamically populated -->
         </tbody>
       </table>
     </div>
 
-
-
-<script>
-  // Load the nav.html content into the #navbar-placeholder
+    <script>
+      // Load the nav.html content into the #navbar-placeholder
       fetch("/nav")
         .then((response) => response.text())
         .then((data) => {
           document.getElementById("navbar-placeholder").innerHTML = data;
         });
 
+      // Timer functionality
+      let seconds = 0;
+      const timerElement = document.querySelector(".timer");
 
-  // Timer functionality
-  let seconds = 0;
-  const timerElement = document.querySelector(".timer");
+      setInterval(() => {
+        seconds++;
+        const hours = Math.floor(seconds / 3600)
+          .toString()
+          .padStart(2, "0");
+        const minutes = Math.floor((seconds % 3600) / 60)
+          .toString()
+          .padStart(2, "0");
+        const secs = (seconds % 60).toString().padStart(2, "0");
+        timerElement.textContent = `${hours}:${minutes}:${secs}`;
+      }, 1000);
 
-  setInterval(() => {
-    seconds++;
-    const hours = Math.floor(seconds / 3600).toString().padStart(2, "0");
-    const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
-    const secs = (seconds % 60).toString().padStart(2, "0");
-    timerElement.textContent = `${hours}:${minutes}:${secs}`;
-  }, 1000);
+      // Start/Stop buttons logic
+      const startButton = document.querySelector(".start-button");
+      const stopButton = document.querySelector(".stop-button");
 
-  // Start/Stop buttons logic
-  const startButton = document.querySelector(".start-button");
-  const stopButton = document.querySelector(".stop-button");
+      startButton.addEventListener("click", () => {
+        startButton.disabled = true; // Disable Start button
+        stopButton.disabled = false; // Enable Stop button
+        startTracking(); // Start tracking when start button is clicked
+      });
 
-  startButton.addEventListener("click", () => {
-    startButton.disabled = true; // Disable Start button
-    stopButton.disabled = false; // Enable Stop button
-    startTracking();  // Start tracking when start button is clicked
-  });
+      stopButton.addEventListener("click", () => {
+        stopButton.disabled = true; // Disable Stop button
+        startButton.disabled = false; // Enable Start button
+        stopTracking(); // Stop tracking when stop button is clicked
+      });
 
-  stopButton.addEventListener("click", () => {
-    stopButton.disabled = true; // Disable Stop button
-    startButton.disabled = false; // Enable Start button
-    stopTracking();  // Stop tracking when stop button is clicked
-  });
+      // Tracking functionality
+      let identifiedNamesList = new Set(); // Track identified names as a Set (unique)
 
-  // Tracking functionality
-  let identifiedNamesList = new Set(); // Track identified names as a Set (unique)
+      // Function to start tracking
+      function startTracking() {
+        fetch("/start_tracking")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(data.status);
+          })
+          .catch((error) => console.error("Error starting tracking:", error));
+      }
 
-  // Function to start tracking
-  function startTracking() {
-    fetch("/start_tracking")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data.status);
-        // Add any other UI updates needed
-      })
-      .catch((error) => console.error("Error starting tracking:", error));
-  }
+      // Function to stop tracking and send data
+      function stopTracking() {
+        fetch("/stop_tracking")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(data.status);
+            sendAttendanceData(); // Send the attendance data once tracking stops
+            window.location.href = "/after_webcam"; // Redirect after stopping
+          })
+          .catch((error) => console.error("Error stopping tracking:", error));
+      }
 
-  // Function to stop tracking and send data
-  function stopTracking() {
-    fetch("/stop_tracking")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data.status);
-        sendAttendanceData();
-        window.location.href = "/after_webcam";  // Redirect after stopping
-      })
-      .catch((error) => console.error("Error stopping tracking:", error));
-  }
+      // Fetch the identified names and update the table
+      function fetchIdentifiedNames() {
+        fetch("/get_identified_names")
+          .then((response) => response.json())
+          .then((data) => {
+            let newEntries = [];
 
-  // Fetch the identified names and update the table
-  function fetchIdentifiedNames() {
-    fetch("/get_identified_names")
-      .then((response) => response.json())
-      .then((data) => {
-        let newEntries = [];
+            data.forEach((entry) => {
+              const identifier = `${entry.name}_${entry.lu_id}`;
 
-        data.forEach((entry) => {
-          const identifier = `${entry.name}_${entry.lu_id}`;
+              // Only add the student if they haven't been identified already
+              if (!identifiedNamesList.has(identifier)) {
+                identifiedNamesList.add(identifier); // Mark as identified
+                newEntries.push(entry); // Collect new entries to update the table
+              }
+            });
 
-          // Only add the student if they haven't been identified already
-          if (!identifiedNamesList.has(identifier)) {
-            identifiedNamesList.add(identifier); // Mark as identified
-            newEntries.push(entry); // Collect new entries to update the table
-          }
+            // Update the table only with new entries
+            if (newEntries.length > 0) {
+              updateAttendanceTable(newEntries);
+            }
+          })
+          .catch((error) => console.error("Error fetching names:", error));
+      }
+
+      // Update the attendance table with new entries
+      function updateAttendanceTable(newEntries) {
+        const tableBody = document.getElementById("attendance-body");
+
+        // Add only new rows
+        newEntries.forEach((entry) => {
+          const row = document.createElement("tr");
+
+          const nameCell = document.createElement("td");
+          nameCell.textContent = entry.name;
+
+          const luIdCell = document.createElement("td");
+          luIdCell.textContent = entry.lu_id;
+
+          const timeCell = document.createElement("td");
+          timeCell.textContent = entry.time; // Add the time in each row
+
+          row.appendChild(nameCell);
+          row.appendChild(luIdCell);
+          row.appendChild(timeCell);
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Send the attendance data to the server
+      function sendAttendanceData() {
+        const rows = document.querySelectorAll("#attendance-body tr");
+        const attendanceData = [];
+
+        // Ensure 'subject' is properly defined before calling this function
+        const subject = document.getElementById("subject").value; // Assuming there's an input with id="subject"
+
+        rows.forEach((row) => {
+          const name = row.cells[0].textContent; // Name
+          const luId = row.cells[1].textContent; // LU ID
+          const time = row.cells[2].textContent; // Time (if it's stored in the 3rd column)
+
+          // Ensure 'time' is properly formatted if needed (example: HH:MM:SS)
+          attendanceData.push({
+            courseId: subject, // Use the 'subject' as courseId
+            name,
+            lu_id: luId,
+            time, // Or modify the time if needed
+          });
         });
 
-        // Update the table only with new entries
-        if (newEntries.length > 0) {
-          updateAttendanceTable(newEntries);
-        }
-      })
-      .catch((error) => console.error("Error fetching names:", error));
-  }
+        // Send data to backend
+        fetch("/save_attendance", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ attendance: attendanceData }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Attendance data sent successfully:", data);
+          })
+          .catch((error) => {
+            console.error("Error sending attendance data:", error);
+          });
+      }
 
-  // Update the attendance table with new entries
-  function updateAttendanceTable(newEntries) {
-    const tableBody = document.getElementById("attendance-body");
-
-    // Add only new rows
-    newEntries.forEach((entry) => {
-      const row = document.createElement("tr");
-
-      const nameCell = document.createElement("td");
-      nameCell.textContent = entry.name;
-
-      const luIdCell = document.createElement("td");
-      luIdCell.textContent = entry.lu_id;
-
-      const timeCell = document.createElement("td");
-      timeCell.textContent = entry.time; // Add the time in each row
-
-      row.appendChild(nameCell);
-      row.appendChild(luIdCell);
-      row.appendChild(timeCell);
-      tableBody.appendChild(row);
-    });
-  }
-
-  // Send the attendance data to the server
-  function sendAttendanceData() {
-    const rows = document.querySelectorAll("#attendance-body tr");
-    const attendanceData = [];
-
-    rows.forEach((row) => {
-      const name = row.cells[0].textContent;
-      const luId = row.cells[1].textContent;
-      attendanceData.push({ name, lu_id: luId });
-    });
-
-    fetch("/save_attendance", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ attendance: attendanceData }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Attendance data sent successfully:", data);
-      })
-      .catch((error) => {
-        console.error("Error sending attendance data:", error);
-      });
-  }
-
-  // Periodically fetch and update the table every 1 second
-  setInterval(fetchIdentifiedNames, 100);
-</script>
-
-
-
+      // Periodically fetch and update the table every 1 second
+      setInterval(fetchIdentifiedNames, 1000);
+    </script>
   </body>
 </html>

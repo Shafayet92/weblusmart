@@ -246,48 +246,120 @@ def webcam():
     return render_template('webcam.html', subject=subject)
 
 # Route to save attendance data to Firestore
+# @app.route('/save_attendance', methods=['POST'])
+# def save_attendance():
+#     attendance_data = request.json.get('attendance', [])
+#     course_id = request.args.get("subject")  # Use query parameter or default
+#     date = datetime.now().strftime("%Y-%m-%d")
+
+#     # Step 1: Get all students enrolled in the course
+#     enrolled_students_query = students_collection.stream()  # Fetch all students
+#     enrolled_students = []
+
+#     for student in enrolled_students_query:
+#         student_data = student.to_dict()
+#         if course_id in student_data.get("enrolledCourses", []):  # Check if enrolled in the course
+#             enrolled_students.append({
+#                 "lu_id": student.id,  # LU ID from document ID
+#                 "name": student_data.get("name"),
+#             })
+#     print(f"Enrolled students for course {course_id}: {enrolled_students}")
+
+#     # Step 2: Extract LU IDs of students marked as present
+#     present_lu_ids = {student.get("lu_id") for student in attendance_data}
+#     print(f"Present LU IDs: {present_lu_ids}")
+
+#     # Step 3: Save attendance records for all students in the course
+#     for student in enrolled_students:
+#         lu_id = student['lu_id']
+#         name = student['name']
+
+#         # Determine the attendance status
+#         status = "present" if lu_id in present_lu_ids else "absent"
+
+#         # Create and save the attendance record
+#         attendance_record = {
+#             "lu_id": lu_id,
+#             "name": name,
+#             "courseId": course_id,
+#             "date": date,
+#             "status": status,
+#         }
+#         print(f"Adding record: {attendance_record}")
+#         students_attendance.add(attendance_record)
+
+#     return jsonify({"status": "success", "message": "Attendance saved successfully"}), 200
+
+
+
+# @app.route('/save_attendance', methods=['POST'])
+# def save_attendance():
+#     try:
+#         # Get attendance data from the request
+#         attendance_data = request.json.get('attendance', [])
+#         if not attendance_data:
+#             return jsonify({"status": "error", "message": "No attendance data provided"}), 400
+
+#         course_id = request.args.get("subject")  # Use query parameter or default
+#         date = datetime.now().strftime("%Y-%m-%d")
+
+#         # Fetch all students enrolled in the course
+#         enrolled_students_query = students_collection.stream()
+#         enrolled_students = []
+
+#         for student in enrolled_students_query:
+#             student_data = student.to_dict()
+#             if course_id in student_data.get("enrolledCourses", []):  # Check if enrolled in the course
+#                 enrolled_students.append({
+#                     "lu_id": student.id,  # LU ID from document ID
+#                     "name": student_data.get("name"),
+#                 })
+
+#         print(f"Enrolled students for course {course_id}: {enrolled_students}")
+
+#         # Step 2: Extract LU IDs of students marked as present
+#         present_lu_ids = {student.get("lu_id") for student in attendance_data}
+#         print(f"Present LU IDs: {present_lu_ids}")
+
+#         # Step 3: Save attendance records for all students in the course
+#         for student in enrolled_students:
+#             lu_id = student['lu_id']
+#             name = student['name']
+
+#             # Determine the attendance status (present or absent)
+#             status = "present" if lu_id in present_lu_ids else "absent"
+
+#             # Create and save the attendance record
+#             attendance_record = {
+#                 "lu_id": lu_id,
+#                 "name": name,
+#                 "courseId": course_id,
+#                 "date": date,
+#                 "status": status,
+#             }
+#             print(f"Adding record: {attendance_record}")
+#             students_attendance.add(attendance_record)
+
+#         return jsonify({"status": "success", "message": "Attendance saved successfully"}), 200
+#     except Exception as e:
+#         print(f"Error while saving attendance: {e}")
+#         return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route('/save_attendance', methods=['POST'])
 def save_attendance():
     attendance_data = request.json.get('attendance', [])
-    course_id = request.args.get("course_id", "INEN-5301-01")  # Use query parameter or default
     date = datetime.now().strftime("%Y-%m-%d")
 
-    # Step 1: Get all students enrolled in the course
-    enrolled_students_query = students_collection.stream()  # Fetch all students
-    enrolled_students = []
-
-    for student in enrolled_students_query:
-        student_data = student.to_dict()
-        if course_id in student_data.get("enrolledCourses", []):  # Check if enrolled in the course
-            enrolled_students.append({
-                "lu_id": student.id,  # LU ID from document ID
-                "name": student_data.get("name"),
-            })
-
-    # Step 2: Extract LU IDs of students marked as present
-    present_lu_ids = {student.get("lu_id") for student in attendance_data}
-
-    # Step 3: Save attendance records for all students in the course
-    for student in enrolled_students:
-        lu_id = student['lu_id']
-        name = student['name']
-
-        # Check if a record for the student already exists for the date
-        existing_record_query = students_attendance.where('lu_id', '==', lu_id).where('courseId', '==', course_id).where('date', '==', date).get()
-
-        if not existing_record_query:  # If no existing record
-            # Determine the attendance status
-            status = "present" if lu_id in present_lu_ids else "absent"
-
-            # Create and save the attendance record
-            attendance_record = {
-                "lu_id": lu_id,
-                "name": name,
-                "courseId": course_id,
-                "date": date,
-                "status": status,
-            }
-            students_attendance.add(attendance_record)
+    for student in attendance_data:
+        attendance_record = {
+            "lu_id": student.get("lu_id"),
+            "name": student.get("name"),  # Add the name of the student
+            "courseId": student.get("courseId"),  # Extract courseId from the student data
+            "date": date,
+            "status": "present",  # Default status set to 'present', can be modified as needed
+        }
+        students_attendance.add(attendance_record)  # Assuming this saves to your data collection
 
     return jsonify({"status": "success", "message": "Attendance saved successfully"}), 200
 
