@@ -350,7 +350,85 @@ def update_attendance_before():
 # Route for update attendance final.html
 @app.route('/update_attendance_final')
 def update_attendance_final():
-    return render_template('update attendance final.html')
+    student_name = request.args.get('student_name')
+    lu_id = request.args.get('lu_id')
+    subject_code = request.args.get('subject_code')
+
+    # Fetch attendance data for the student, subject, and class from Firestore
+    attendance_ref = db.collection('attendances')
+    attendance_query = attendance_ref.where('lu_id', '==', lu_id).where('courseId', '==', subject_code)
+    attendance_docs = attendance_query.stream()
+
+    # Store the attendance data
+    attendance_data = []
+    present_count = 0
+    total_classes = 0
+
+    for doc in attendance_docs:
+        data = doc.to_dict()
+        status = data.get('status')
+        attendance_data.append({
+            'date': data.get('date'),
+            'status': status
+        })
+        total_classes += 1
+        if status == "present":
+            present_count += 1
+
+    # Sort attendance data by date (assuming 'date' is in a format like 'YYYY-MM-DD')
+    attendance_data.sort(key=lambda x: x['date'])
+
+    # Add incremental class names (Class 1, Class 2, etc.)
+    for i, record in enumerate(attendance_data):
+        record['class_name'] = f"Class {i + 1}"
+
+    # Calculate attendance percentage
+    if total_classes > 0:
+        attendance_percentage = (present_count / total_classes) * 100
+    else:
+        attendance_percentage = 0
+
+    # Pass the data to the template
+    return render_template('update attendance final.html',
+                           student_name=student_name,
+                           lu_id=lu_id,
+                           subject_code=subject_code,
+                           attendance_data=attendance_data,
+                           attendance_percentage=attendance_percentage)
+
+
+
+
+@app.route('/update_attendance', methods=['POST'])
+def update_attendance():
+    data = request.get_json()
+    attendance = data.get('attendance')
+    lu_id = data.get('lu_id')
+    subject_code = data.get('subject_code')
+
+    if not attendance or not lu_id or not subject_code:
+        return jsonify({"error": "Missing data"}), 400
+
+    # Loop through the attendance records and update them in Firestore
+    for record in attendance:
+        # Search for existing attendance record
+        attendance_ref = db.collection('attendances')
+        attendance_query = attendance_ref.where('lu_id', '==', lu_id)\
+                                         .where('subject_code', '==', subject_code)\
+                                         .where('class_name', '==', record['class_name'])\
+                                         .where('date', '==', record['date'])
+
+        # Get the document(s) for the specific class and student
+        attendance_docs = attendance_query.stream()
+
+        for doc in attendance_docs:
+            # Update the attendance record
+            doc.reference.update({
+                'status': record['status'],
+                'updated_at': firestore.SERVER_TIMESTAMP,
+            })
+
+    return jsonify({"message": "Attendance updated successfully"})
 
 
 # Route for view attendance.html

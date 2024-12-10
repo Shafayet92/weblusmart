@@ -261,90 +261,35 @@
     <div id="navbar-placeholder"></div>
 
     <div class="dashboard-container">
-      <h1 class="student-name">Student 1</h1>
-      <div class="percentage" id="attendancePercentage">57%</div>
+      <h1 class="student-name">{{ student_name }}</h1>
+<div class="percentage" id="attendancePercentage">{{ attendance_percentage }}%</div>
 
-      <table class="attendance-table">
-        <thead>
-          <tr>
-            <th>Class</th>
-            <th>Date</th>
-            <th>Attendance</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Class 1</td>
-            <td class="date-cell">20 Nov 2024</td>
-            <td>
-              <select
-                class="attendance-select"
-                onchange="updateAttendance(this)"
-              >
-                <option value="present" selected>Present</option>
-                <option value="absent">Absent</option>
-                <option value="excuse">Excuse</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <td>Class 2</td>
-            <td class="date-cell">21 Nov 2024</td>
-            <td>
-              <select
-                class="attendance-select"
-                onchange="updateAttendance(this)"
-              >
-                <option value="present" selected>Present</option>
-                <option value="absent">Absent</option>
-                <option value="excuse">Excuse</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <td>Class 3</td>
-            <td class="date-cell">22 Nov 2024</td>
-            <td>
-              <select
-                class="attendance-select"
-                onchange="updateAttendance(this)"
-              >
-                <option value="present" selected>Present</option>
-                <option value="absent">Absent</option>
-                <option value="excuse">Excuse</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <td>Class 4</td>
-            <td class="date-cell">23 Nov 2024</td>
-            <td>
-              <select
-                class="attendance-select"
-                onchange="updateAttendance(this)"
-              >
-                <option value="present">Present</option>
-                <option value="absent" selected>Absent</option>
-                <option value="excuse">Excuse</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <td>Class 5</td>
-            <td class="date-cell">23 Nov 2024</td>
-            <td>
-              <select
-                class="attendance-select"
-                onchange="updateAttendance(this)"
-              >
-                <option value="present">Present</option>
-                <option value="absent" selected>Absent</option>
-                <option value="excuse">Excuse</option>
-              </select>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+<table class="attendance-table">
+  <thead>
+    <tr>
+      <th>Class</th>
+      <th>Date</th>
+      <th>Attendance</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for record in attendance_data %}
+    <tr>
+      <td>{{ record.class_name }}</td>
+      <td class="date-cell">{{ record.date }}</td>
+      <td>
+        <select class="attendance-select" onchange="updateAttendance(this)">
+          <option value="present" {% if record.status == 'present' %}selected{% endif %}>Present</option>
+          <option value="absent" {% if record.status == 'absent' %}selected{% endif %}>Absent</option>
+          <option value="excuse" {% if record.status == 'excuse' %}selected{% endif %}>Excuse</option>
+        </select>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
 
       <div class="button-container">
         <button
@@ -415,23 +360,35 @@
       }
 
       function saveChanges() {
-        const attendance = Array.from(
-          document.querySelectorAll(".attendance-select")
-        ).map((select) => ({
-          class: select.closest("tr").querySelector("td").textContent,
-          status: select.value,
-        }));
+  const attendance = Array.from(document.querySelectorAll(".attendance-select")).map((select) => ({
+    class_name: select.closest("tr").querySelector("td").textContent,
+    status: select.value,
+    date: select.closest("tr").querySelector(".date-cell").textContent,
+  }));
 
-        console.log("Saving attendance:", attendance);
-        alert("Changes saved successfully!");
-        window.location.href = "{{ url_for('dashboard') }}";
-      }
+  // Send the updated attendance to Flask via a POST request
+  fetch("/save_attendance", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      attendance: attendance,
+      lu_id: "{{ lu_id }}",
+      subject_code: "{{ subject_code }}",
+    }),
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert("Attendance saved successfully!");
+    window.location.href = "{{ url_for('dashboard') }}";  // Redirect to dashboard or any other page
+  })
+  .catch(error => {
+    console.error("Error saving attendance:", error);
+    alert("There was an error saving the attendance. Please try again.");
+  });
+}
 
-      document.querySelectorAll(".attendance-select").forEach((select) => {
-        select.classList.add(select.value);
-      });
-
-      updateAttendance(document.querySelector(".attendance-select"));
     </script>
   </body>
 </html>
