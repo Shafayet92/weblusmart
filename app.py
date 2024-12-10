@@ -8,7 +8,10 @@ from datetime import datetime
 import time
 
 
-cred_path = os.path.join("static", "js", "key.json")
+# cred_path = os.path.join("static", "js", "key.json")
+
+cred_path = '/etc/secrets/key.json'
+
 cred = credentials.Certificate(cred_path)
 
 firebase_admin.initialize_app(cred)
@@ -595,6 +598,9 @@ def stop_tracking():
     global tracking_active
     tracking_active = False
     return jsonify({"status": "Tracking stopped"})
+
+
+
 
 
 
