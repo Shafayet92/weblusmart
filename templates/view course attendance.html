@@ -371,7 +371,9 @@
         });
 
       // Set default date to today
-      document.getElementById("attendanceDate").valueAsDate = new Date();
+      document.getElementById("attendanceDate").valueAsDate = new Date(
+        new Date().setDate(new Date().getDate() - 1)
+      );
 
       // Handle date change
       document
