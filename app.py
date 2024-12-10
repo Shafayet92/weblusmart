@@ -355,11 +355,12 @@ def view_attendance():
             # Fetch the course data using the subject code
             subject_data = courses_collection.document(subject_code).get()
 
-            # Check if the subject document exists and retrieve name, code, and description
+            # Check if the subject document exists
             if subject_data.exists:
-                subject_name = subject_data.to_dict().get('name', 'Unknown Course')
-                subject_code = subject_data.to_dict().get('code', 'Unknown Code')
-                subject_description = subject_data.to_dict().get('description', 'No Description Available')
+                subject_dict = subject_data.to_dict()
+                subject_name = subject_dict.get('name', 'Unknown Course')
+                subject_code = subject_dict.get('code', 'Unknown Code')
+                subject_description = subject_dict.get('description', 'No Description Available')
             else:
                 return "Course not found", 404  # If the course doesn't exist in Firestore
 
@@ -367,32 +368,56 @@ def view_attendance():
             attendance_query = students_attendance.where('courseId', '==', subject_code).where('date', '==', attendance_date)
             attendance_docs = attendance_query.stream()
 
-            # Format attendance data for the response
-            attendance_data = [
-                {
-                    'name': students_collection.document(doc.to_dict().get('lu_id')).get().to_dict().get('name', 'Unknown'),
-                    'lu_id': doc.to_dict().get('lu_id'),
-                    'status': doc.to_dict().get('status', 'Absent').capitalize()
-                }
-                for doc in attendance_docs
-            ]
+            attendance_data = []
+            total_students = 0
+            present_students = 0
 
-            # Render the view attendance page with the necessary data
+            for doc in attendance_docs:
+                student_data = doc.to_dict()
+                lu_id = student_data.get('lu_id', 'Unknown LU ID')
+                status = student_data.get('status', 'Absent').capitalize()
+
+                # Count the present students
+                if status == 'Present':
+                    present_students += 1
+
+                total_students += 1
+
+                # Fetch student's name
+                student_doc = students_collection.document(lu_id).get()
+                student_name = 'Unknown Student'  # Default name in case of missing data
+                if student_doc.exists:
+                    student_name = student_doc.to_dict().get('name', 'Unknown Student')
+
+                attendance_data.append({
+                    'name': student_name,
+                    'lu_id': lu_id,
+                    'status': status
+                })
+
+            # Calculate the attendance percentage
+            if total_students > 0:
+                attendance_percentage = (present_students / total_students) * 100
+            else:
+                attendance_percentage = 0  # Prevent division by zero
+
+            # Render the view attendance page with the attendance percentage
             return render_template('view attendance.html',
                                    subject_name=subject_name,
                                    subject_code=subject_code,
                                    subject_description=subject_description,
                                    date=attendance_date,
-                                   attendance_data=attendance_data)
+                                   attendance_data=attendance_data,
+                                   attendance_percentage=attendance_percentage)
 
         return "Subject or date not selected", 400
 
-    # In case of GET request, return a default view
     return render_template('view attendance.html',
                            subject_name="Default Course Name",
                            subject_code="No Code Provided",
                            subject_description="No Description Provided",
-                           date="No Date Provided")
+                           date="No Date Provided",
+                           attendance_percentage=0)
 
 
 # Route for view course attendance.html

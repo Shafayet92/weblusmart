@@ -323,7 +323,8 @@
       </table>
 
       <div class="attendance-percentage">
-        Class Attendance: <span>70%</span>
+        Class Attendance:
+        <span>{{ "%.2f"|format(attendance_percentage) }}%</span>
       </div>
 
       <button
