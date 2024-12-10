@@ -312,10 +312,27 @@ def manage_course_attendance():
 def select_course_attendance():
     return render_template('select course attendance.html')
 
+
+
 # Route for update attendance before.html
 @app.route('/update_attendance_before')
 def update_attendance_before():
-    return render_template('update attendance before.html')
+    # Get the subject ID from the query parameter
+    subject_code = request.args.get('subject')
+
+    # Fetch course details using the subject code from Firestore
+    course_doc = courses_collection.document(subject_code).get()
+
+    # Check if the course exists
+    if course_doc.exists:
+        course_data = course_doc.to_dict()
+        subject_name = course_data.get('name', 'Unknown Course')
+    else:
+        subject_name = "Course Not Found"
+
+    # Pass the course details to the template
+    return render_template('update attendance before.html', subject_code=subject_code, subject_name=subject_name)
+
 
 # Route for update attendance final.html
 @app.route('/update_attendance_final')
@@ -323,28 +340,7 @@ def update_attendance_final():
     return render_template('update attendance final.html')
 
 
-# # Route for view attendance.html
-# @app.route('/view_attendance', methods=['GET', 'POST'])
-# def view_attendance():
-#     if request.method == 'POST':
-#         # Get the selected subject and date from the form submission
-#         subject_name = request.form.get('subject')
-#         attendance_date = request.form.get('attendanceDate')
-
-#         if subject_name and attendance_date:
-#             # Render the template with the selected subject and date
-#             return render_template(
-#                 'view attendance.html',
-#                 subject=subject_name,
-#                 date=attendance_date
-#             )
-#         else:
-#             # Handle case where subject or date is missing
-#             return "Subject or date not selected", 400
-
-#     # Default GET request
-#     return render_template('view attendance.html', subject="Default Course Name", date="No Date Provided")
-
+# Route for view attendance.html
 @app.route('/view_attendance', methods=['GET', 'POST'])
 def view_attendance():
     if request.method == 'POST':

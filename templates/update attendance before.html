@@ -202,7 +202,11 @@
 
     <div class="dashboard-container">
       <div class="header-container">
-        <h1 class="section-title">UX with AI (INEN-6301-02)</h1>
+        <h1 class="section-title">Manage Attendance for {{ subject_name }}</h1>
+
+        <div class="course-details">
+          <p><strong>Subject Code:</strong> {{ subject_code }}</p>
+        </div>
       </div>
 
       <table class="attendance-table">
@@ -210,34 +214,25 @@
           <tr>
             <th>Select</th>
             <th>Name</th>
-            <th>Status</th>
+            <th>LU ID</th>
           </tr>
         </thead>
         <tbody>
+          {% for student in students %}
           <tr>
             <td>
               <input
                 type="radio"
                 name="student"
                 class="radio-input"
-                value="Student 1"
+                value="{{ student.name }}"
+                data-lu-id="{{ student.lu_id }}"
               />
             </td>
-            <td>Student 1</td>
-            <td>Present</td>
+            <td>{{ student.name }}</td>
+            <td>{{ student.lu_id }}</td>
           </tr>
-          <tr>
-            <td>
-              <input
-                type="radio"
-                name="student"
-                class="radio-input"
-                value="Student 2"
-              />
-            </td>
-            <td>Student 2</td>
-            <td>Absent</td>
-          </tr>
+          {% endfor %}
         </tbody>
       </table>
 
@@ -264,11 +259,18 @@
       });
 
       updateButton.addEventListener("click", () => {
-        const selectedStudent = document.querySelector(
-          ".radio-input:checked"
-        ).value;
-        alert(`Updating attendance for ${selectedStudent}`);
-        window.location.href = "{{ url_for('update_attendance_final') }}";
+        const selectedStudent = document.querySelector(".radio-input:checked");
+
+        if (selectedStudent) {
+          const studentName = selectedStudent.value;
+          const luId = selectedStudent.getAttribute("data-lu-id");
+          alert(`Updating attendance for ${studentName} (LU ID: ${luId})`);
+
+          // Redirect to the final attendance update route with student details
+          window.location.href = `{{ url_for('update_attendance_final') }}?student_name=${studentName}&lu_id=${luId}&subject_code={{ subject_code }}`;
+        } else {
+          alert("Please select a student first.");
+        }
       });
     </script>
   </body>
